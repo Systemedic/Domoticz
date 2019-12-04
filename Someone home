@@ -1,0 +1,33 @@
+--*------------------------------------------------------------------------------------*--
+--Creator: Rens
+--Date: 26-04-2019
+--Last update: 26-04-2019
+--Changelog:
+--Source: -
+--Description: Used check whenevery anyone is home depending on ping
+--*------------------------------------------------------------------------------------*--
+
+return {
+	on = {
+		devices = {
+			239, -- Person one
+			240 -- Person two
+		}
+	},
+	execute = function(domoticz, device)
+		 --Declarations
+		local IemandThuis 	= domoticz.devices(78) -- Iemand Thuis
+		local One 		= domoticz.devices(239) -- Person one 
+		local Two 		= domoticz.devices(240) -- Person two
+		
+        --Function
+        if (One.active) or (Two.active) then -- When somebody is at home
+            IemandThuis.switchOn().checkFirst()
+            domoticz.log('Er is iemand thuis gekomen!')
+        else
+            IemandThuis.switchOff().checkFirst()
+            domoticz.log('Er is niemand meer thuis')
+        end
+        
+	end
+}
