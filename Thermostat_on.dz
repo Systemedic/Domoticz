@@ -1,0 +1,33 @@
+--*------------------------------------------------------------------------------------*--
+--Creator: Rob
+--Date: 01-10-2019
+--Last update: -
+--Changelog: -
+--Source: -
+--Description: Set the Toon to program "Thuis" at set time
+--*------------------------------------------------------------------------------------*--
+
+return {
+    on = {
+        timer = {'at 07:15'},
+        },
+
+--Voeg logging toe voor dit script  
+   logging = {
+   level = domoticz.LOG_INFO,
+   marker = "Toon op thuisstand"
+   },
+   
+    execute = function(domoticz, item)
+    --Declarations
+    local Toon  = domoticz.devices(116) -- Toon Programma's
+    local IemandThuis = domoticz.devices(78) -- Iemand thuis?
+    
+    --Function
+    if (item.isTimer and IemandThuis.active) then
+    Toon.cancelQueuedCommands()
+    Toon.switchSelector(30)
+    domoticz.log('Toon is automatisch op thuisstand gezet via dzVents')
+    end
+end
+}
