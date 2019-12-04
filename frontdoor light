@@ -1,0 +1,31 @@
+--*------------------------------------------------------------------------------------*--
+--Creator: Rob
+--Date: 13-09-2019
+--Last update: xx-xx-xxxx
+--Changelog:
+--Source: -
+--Description: Used to Switch on light at the front door when time is sunset
+--*------------------------------------------------------------------------------------*--
+
+return {
+    on = {
+        timer = {
+	        'at sunset',
+	        'at sunrise'
+        }
+    },
+    
+    execute = function(domoticz, timer)
+        --Declarations
+		local Light 	= domoticz.devices(189) --Buitenlamp voor
+		
+		--Function
+            if (timer.trigger == 'at sunset') then
+	        Light.switchOn()
+	        domoticz.log('Buitenlamp aangezet via LUA!')
+        else
+	        Light.switchOff()
+	        domoticz.log('Buitenlamp uitgezet via LUA!')
+        end
+    end
+}
