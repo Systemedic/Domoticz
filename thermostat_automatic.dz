@@ -1,0 +1,51 @@
+--*------------------------------------------------------------------------------------*--
+--Creator: Rob
+--Date: 08-10-2019
+--Last update: 05-11-2019
+--Changelog: 16-10-2019: Added devices to trigger. Changed function segment. isTimer no longer used | 05-11-2019: Trying to solve the .afterMin not working
+--Source: -
+--Description: Turn on/off heating depending if someone is home or not
+--*------------------------------------------------------------------------------------*--
+
+return {
+    on = {
+        devices = { 
+            [78] =  { 'between 07:00 and 19:30' }, --Trigger is iemand thuis tussen tijd
+            116,
+        }
+    },
+     
+--Voeg logging toe voor dit script  
+   logging = {
+   level = domoticz.LOG_DEBUG,
+   marker = "Thermostaat automatisch"
+   },
+
+    execute = function( domoticz, item )
+        --Declarations
+        local Thuis = domoticz.devices(78) --Is er iemand thuis
+        local Toon  = domoticz.devices(116) -- Toon Programma's
+        
+        domoticz.log('State of ' .. Thuis.name .. ' is ' .. Thuis.state,domoticz.LOG_DEBUG)
+        domoticz.log('State of ' .. Toon.name .. ' is ' .. Toon.state,domoticz.LOG_DEBUG)
+        domoticz.log('Script is triggered by ' .. item.name,domoticz.LOG_DEBUG)
+        
+    
+       if item == Toon then 
+            domoticz.log(Toon.name .. ' was updated ! Was it this script ?' ,domoticz.LOG_DEBUG)
+            return
+        end
+        
+        --Function
+        if Thuis.active then
+            Toon.cancelQueuedCommands()
+            Toon.switchSelector(30)
+            domoticz.log('Toon is automatisch ingesteld op programma Thuis via dzVents')
+            --domoticz.notify('Thermostaat automatisch', 'Er is iemand thuis. De thermostaat is automatisch op het programma Thuis ingesteld.', 'domoticz.PRIORITY_LOW')
+        else
+            Toon.switchSelector(10).afterMin(30)
+            domoticz.log('Toon is automatisch ingesteld op programma Weg via dzVents')
+            --domoticz.notify('Thermostaat automatisch', 'Er is niemand thuis. De thermostaat is automatisch op het programma Weg ingesteld.', 'domoticz.PRIORITY_LOW')
+        end
+end
+}
