@@ -1,0 +1,33 @@
+--*------------------------------------------------------------------------------------*--
+--Creator: Rob
+--Date: 24-10-2019
+--Last update: 01-11-2019
+--Changelog: Iemand thuis toegevoegd.
+--Source: -
+--Description: Set the Toon to program "Slapen" at set time
+--*------------------------------------------------------------------------------------*--
+
+return {
+    on = {
+        timer = {'at 19:45'},
+        },
+
+--Voeg logging toe voor dit script  
+   logging = {
+   level = domoticz.LOG_INFO,
+   marker = "Toon op Slaapstand"
+   },
+   
+    execute = function(domoticz, item)
+    --Declarations
+    local Toon  = domoticz.devices(116) -- Toon Programma's
+    local IemandThuis = domoticz.devices(78) --Iemandthuis
+    
+    --Function
+    if (item.isTimer and IemandThuis.active) then
+    Toon.cancelQueuedCommands()
+    Toon.switchSelector(20)
+    domoticz.log('Toon is automatisch op slaapstand gezet via dzVents')
+    end
+end
+}
