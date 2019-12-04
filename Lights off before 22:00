@@ -1,0 +1,40 @@
+--*------------------------------------------------------------------------------------*--
+--Creator: Rob
+--Date: 03-12-2019
+--Last update: xx-xx-xxxx
+--Changelog:
+--Source: -
+--Description: Used to Switch off lights in the living room when time is before 22.00 hour.
+--*------------------------------------------------------------------------------------*--
+
+return {
+    on = {
+        devices = {
+            92 -- Xiaomi mini switch
+        }
+    },
+
+--Voeg logging toe voor dit script  
+   logging = {
+   level = domoticz.LOG_INFO,
+   marker = "Lampen uit voor 22:00"
+   },
+   
+    execute = function(domoticz, device)
+        --Declarations
+        local Time          = require('Time')       --Time function
+        local CurrentTime   = Time()                --Current time
+        local Knop          = domoticz.devices(92)  -- Xiaomi Mini Switch
+        
+        --Function
+        if (CurrentTime.matchesRule('at 06:00-22:00')) then 
+            if Knop.state == 'Double Click' then 
+            domoticz.devices(188).switchOff().checkFirst()   --Lampen boven eettafel
+            domoticz.devices(185).switchOff().checkFirst()   --Lampen boven bank
+            domoticz.devices(51).switchOff().checkFirst()    --Lamp naast televisie
+            domoticz.devices(179).switchOff().checkFirst()   --Lamp boven dressoir
+            domoticz.log('De lampen zijn uitgeschakeld')
+       end
+end
+end
+}
