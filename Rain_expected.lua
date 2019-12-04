@@ -1,5 +1,3 @@
--- BE AWARE LUA SCRIPT!!
-
 ----------------------------------------------------------------------------------------------------------------
 -- IsItGonnaRain( int minutesinfuture)
 -- returns: int avarage rainfall for the next minutesinfuture
