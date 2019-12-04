@@ -1,0 +1,41 @@
+--*------------------------------------------------------------------------------------*--
+--Creator: Rob
+--Date: 16-09-2019
+--Last update: xx-xx-xxxx
+--Changelog:
+--Source: -
+--Description: Used to Switch on lights in the living room when time is sunset and someone is home
+--*------------------------------------------------------------------------------------*--
+
+return {
+	on = {
+		devices = {
+		    78, -- Iemand thuis
+		    107 -- Vakantiemodus
+		},
+		timer = {
+		    'at 60 minutes before sunset'
+		}
+	},
+	execute = function(domoticz, device)
+		--Declarations
+		local IemandThuis 	= domoticz.devices(78) -- Iemand Thuis
+		local Vakantie 		= domoticz.devices(107) -- Vakantiemodus
+		local Time 		= require('Time') --Time function
+		local CurrentTime 	= Time() --Current time
+		
+		--Function
+		if (not Vakantie.active and IemandThuis.active) then
+			if (CurrentTime.matchesRule('between 60 minutes before sunset and 00:00')) then 
+            domoticz.devices(185).switchOn().checkFirst()   
+            domoticz.devices(179).switchOn().checkFirst()   
+            domoticz.devices(51).switchOn().checkFirst()    
+            domoticz.log('De lampen zijn ingeschakeld')
+	        	end
+	    	else -- When nobody home or vacation
+            domoticz.devices(185).switchOff().checkFirst()   
+            domoticz.devices(179).switchOff().checkFirst()   
+            domoticz.devices(51).switchOff().checkFirst()  
+		end
+	end
+}
