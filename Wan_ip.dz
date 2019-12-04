@@ -1,0 +1,35 @@
+return {
+on = {
+timer = { 'every 4 hours' }
+},
+
+logging = {
+level = domoticz.LOG_FORCE,
+marker = '[WAN IP]'
+},
+
+execute = function(dz, devNil)
+
+local dzb = dz.LOG_FORCE
+local getIp = 'curl -s http://whatismyip.akamai.com/'
+local tmpFile = '/volume1/@appstore/domoticz/tmp/wanip.txt'
+local actIp = ''
+local devIp = dz.devices('WAN IP')
+local currIp = devIp.text
+
+os.execute(getIp..' > '..tmpFile)
+actIp = io.open(tmpFile):read()
+
+if actIp == nil then actIp = 'Cannot retrieve WAN IP' end 
+
+if actIp ~= currIp then
+msgTxt = 'WAN IP has changed: '..currIp..' ==> '..actIp
+dz.log(msgTxt, dzb)
+dz.notify('WAN IP', msgTxt, dz.PRIORITY_EMERGENCY)
+devIp.updateText(actIp)
+os.execute('rm '..tmpFile)
+else 
+dz.log('No change in WAN IP', dzb)
+end 
+end
+}
