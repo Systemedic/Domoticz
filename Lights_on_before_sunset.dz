@@ -1,8 +1,8 @@
 --*------------------------------------------------------------------------------------*--
 --Creator: Rob
 --Date: 16-09-2019
---Last update: xx-xx-xxxx
---Changelog:
+--Last update: 16-02-2020
+--Changelog: 16-02-2020 | Added switch for babysit
 --Source: -
 --Description: Used to Switch on lights in the living room when time is sunset and someone is home
 --*------------------------------------------------------------------------------------*--
@@ -10,8 +10,9 @@
 return {
 	on = {
 		devices = {
-		    78, -- Iemand thuis
-		    107 -- Vakantiemodus
+		    78,     -- Iemand thuis
+		    107,    -- Vakantiemodus
+		    299     -- Oppas
 		},
 		timer = {
 		    'at 60 minutes before sunset'
@@ -19,13 +20,14 @@ return {
 	},
 	execute = function(domoticz, device)
 		--Declarations
-		local IemandThuis 	= domoticz.devices(78) -- Iemand Thuis
-		local Vakantie 		= domoticz.devices(107) -- Vakantiemodus
-		local Time 		= require('Time') --Time function
-		local CurrentTime 	= Time() --Current time
+		local IemandThuis 	= domoticz.devices(78)      -- Iemand Thuis
+		local Vakantie 		= domoticz.devices(107)     -- Vakantiemodus
+		local Oppas         = domoticz.devices(299)     -- Babysit
+		local Time 		= require('Time')               -- Time function
+		local CurrentTime 	= Time()                    -- Current time
 		
 		--Function
-		if (not Vakantie.active and IemandThuis.active) then
+		if (not Vakantie.active and IemandThuis.active) or (Oppas.active) then
 			if (CurrentTime.matchesRule('between 60 minutes before sunset and 00:00')) then 
             domoticz.devices(185).switchOn().checkFirst()   
             domoticz.devices(179).switchOn().checkFirst()   
