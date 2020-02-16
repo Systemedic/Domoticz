@@ -1,15 +1,16 @@
 --*------------------------------------------------------------------------------------*--
 --Creator: Rob
 --Date: 01-10-2019
---Last update: -
---Changelog: -
+--Last update: 16-02-2020
+--Changelog:
+--16-02-2020 | Added a switch for Babysit
 --Source: -
 --Description: Set the Toon to program "Thuis" at set time
 --*------------------------------------------------------------------------------------*--
 
 return {
     on = {
-        timer = {'at 07:15'},
+        timer = {'at 07:10'},
         },
 
 --Voeg logging toe voor dit script  
@@ -20,11 +21,12 @@ return {
    
     execute = function(domoticz, item)
     --Declarations
-    local Toon  = domoticz.devices(116) -- Toon Programma's
-    local IemandThuis = domoticz.devices(78) -- Iemand thuis?
+    local Toon          = domoticz.devices(116)     -- Toon Programma's
+    local IemandThuis   = domoticz.devices(78)      -- Iemand thuis?
+    local Oppas         = domoticz.devices(299)     -- Babysit
     
     --Function
-    if (item.isTimer and IemandThuis.active) then
+    if (item.isTimer and IemandThuis.active) or (item.isTimer and Oppas.active) then
     Toon.cancelQueuedCommands()
     Toon.switchSelector(30)
     domoticz.log('Toon is automatisch op thuisstand gezet via dzVents')
