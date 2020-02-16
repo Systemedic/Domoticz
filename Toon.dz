@@ -1,181 +1,207 @@
 return {
+   logging = {
+      level = domoticz.LOG_FORCE, -- Select one of LOG_INFO, LOG_DEBUG, LOG_ERROR, LOG_FORCE to override system log level
+      marker = "-=# P1 Toon #=-"
+},
    on = {
       timer = {
          'every minute'
       }
    },
-   
-   	logging = {
-   level = domoticz.LOG_ERROR,
-   marker = "Toon"
-   },
-   
    execute = function(domoticz)
-        local ToonThermostat        = domoticz.variables('UV_ToonThermostatSensorName').value -- Sensor showing current setpoint
-        local ToonTemperature       = domoticz.variables('UV_ToonTemperatureSensorName').value -- Sensor showing current room temperature
-        local ToonBoilerTempIn      = domoticz.variables('UV_ToonboilerInTempName').value -- Sensor showing water temp return
-        local ToonBoilerTempOut     = domoticz.variables('UV_ToonboilerOutTempName').value -- Sensor showing current water temp out
-        local ToonBoilerPressure    = domoticz.variables('UV_ToonboilerPressure').value -- Sensor showing current room temperature
-        local ToonBoilerModulation  = domoticz.variables('UV_ToonboilerModulationLevel').value -- Sensor showing current Boiler Modulation
-        local ToonScenes            = domoticz.variables('UV_ToonScenesSensorName').value -- Sensor showing current program
-        local ToonAutoProgram       = domoticz.variables('UV_ToonAutoProgramSensorName').value -- Sensor showing current auto program status
-        local ToonProgramInformation = domoticz.variables('UV_ToonProgramInformationSensorName').value -- Sensor showing displaying program information status
-        local ToonIP                = domoticz.variables('UV_ToonIP').value
-        local DomoticzIP            = domoticz.variables('UV_DomoticzIP').value
-        local ToonBurnerName        = domoticz.variables('UV_ToonBurnerName').value
-        local P1SmartMeterPower     = domoticz.variables('UV_P1SmartMeterElectra').value
-        local P1SmartMeterGas1      = domoticz.variables('UV_P1SmartMeterGasMeterStand').value
-        local ToonBoilerSetpoint    = domoticz.variables('UV_ToonBoilerTempSetpointSensorName').value  -- Sensor showing current boiler set point water temp out
-    
-        -- Handle json
+        local ToonThermostat        = domoticz.variables('UV_ToonThermostat').value             -- Sensor showing current setpoint
+        local ToonTemperature       = domoticz.variables('UV_ToonTemperature').value            -- Sensor showing current room temperature
+        local ToonBoilerTempIn      = domoticz.variables('UV_ToonBoilerTempIn').value           -- Sensor showing water temp return
+        local ToonBoilerTempOut     = domoticz.variables('UV_ToonBoilerTempOut').value          -- Sensor showing current water temp out
+        local ToonBoilerPressure    = domoticz.variables('UV_ToonBoilerPressure').value         -- Sensor showing current room temperature
+        local ToonBoilerModulation  = domoticz.variables('UV_ToonBoilerModulation').value       -- Sensor showing current Boiler Modulation
+        local ToonScenes            = domoticz.variables('UV_ToonScenes').value                 -- Sensor showing current program
+        local ToonAutoProgram       = domoticz.variables('UV_ToonAutoProgram').value            -- Sensor showing current auto program status
+        local ToonProgramInformation = domoticz.variables('UV_ToonProgramInformation').value    -- Sensor showing displaying program information status
+        local ToonIP                = domoticz.variables('UV_ToonIP').value                     -- IP adress of Toon
+        local DomoticzIP            = domoticz.variables('UV_DomoticzIP').value                 -- IP adress of Domoticz
+        local ToonBurnerName        = domoticz.variables('UV_ToonBurnerName').value             --Sensor showing boiler usage
+        local P1SmartMeterPower     = domoticz.variables('UV_P1SmartMeterElectra').value        -- Sensor showing power usage
+        local P1SmartMeterGas1      = domoticz.variables('UV_P1SmartMeterGasMeterStand').value  --Sensor showing gas usage
+        local ToonBoilerSetpoint    = domoticz.variables('UV_ToonBoilerTempSetpoint').value     -- Sensor showing current boiler set point water temp out
+   
+-- Handle json
+        --local json = assert(loadfile "/home/pi/domoticz/scripts/lua/JSON.lua")()  -- For Linux
+        --local json = assert(loadfile "/var/domoticz/scripts/lua/JSON.lua")()  -- For Linux (ClearOS)
         --local json = assert(loadfile "/config/scripts/lua/JSON.lua")()  -- For Docker
-        --local json = (loadfile "/home/pi/domoticz/scripts/lua/JSON.lua")()  -- For Linux
-        local json = assert(loadfile "/volume1/@appstore/domoticz/var/scripts/lua/JSON.lua")()  -- For Syno package
-        
+        local json      = (loadfile "/volume1/@appstore/domoticz/var/scripts/lua/JSON.lua")()  -- For Syno package
+       
         local handle = assert(io.popen(string.format('curl http://%s/happ_thermstat?action=getThermostatInfo', ToonIP)))
         local ThermostatInfo = handle:read('*all')
         handle:close()
-        
+       
         local jsonThermostatInfo = json:decode(ThermostatInfo)
-        
+       
         if jsonThermostatInfo == nil then
             return
         end
-        
+       
         local handle2 = assert(io.popen(string.format('curl http://%s/boilerstatus/boilervalues.txt', ToonIP)))
         local BoilerInfo = handle2:read('*all')
         handle2:close()
-        -- JSON data from Toon contains a extra "," which should not be there.
+
+-- JSON data from Toon contains a extra "," which should not be there.
         BoilerInfo = string.gsub(BoilerInfo, ",}", "}")
         jsonBoilerInfo = json:decode(BoilerInfo)
-        
-         -- http://IP_TOON/hdrv_zwave?action=getDevices.json 
+       
+-- http://IP_TOON/hdrv_zwave?action=getDevices.json
         local handle4 = assert(io.popen(string.format('curl http://%s/hdrv_zwave?action=getDevices.json', ToonIP)))
         local GasPowerInfo = handle4:read('*all')
         handle4:close()
-        
-         -- JSON data from Toon contains a extra "." which should not be there.
+       
+-- JSON data from Toon contains a extra "." which should not be there.
         GasPowerInfo = string.gsub(GasPowerInfo, "dev_2.", "dev_2")
         GasPowerInfo = string.gsub(GasPowerInfo, "dev_2:", "dev_2\":")
-        
+       
         local jsonGasPower = json:decode(GasPowerInfo)
-        
-       --domoticz.log(jsonGasPower)
-         local CurrentElectricityFlowHoog = tonumber(jsonGasPower.dev_24.CurrentElectricityFlow )
-         local CurrentElectricityQuantityHoog = tonumber(jsonGasPower.dev_24.CurrentElectricityQuantity)
-         local CurrentElectricityFlowLaag = tonumber(jsonGasPower.dev_26.CurrentElectricityFlow )
-         local CurrentElectricityQuantityLaag = tonumber(jsonGasPower.dev_26.CurrentElectricityQuantity)
+       
+-- Update the powerconsumption
+         local CurrentElectricityFlowHoog = tonumber(jsonGasPower.dev_24.CurrentElectricityFlow )                       --stroomverbruik momenteel hoogtarief
+         local CurrentElectricityFlowLaag = tonumber(jsonGasPower.dev_26.CurrentElectricityFlow )                       --stroomverbruik momenteel laagtarief
+         local CurrentElectricityQuantityHoog = tonumber(jsonGasPower.dev_24.CurrentElectricityQuantity)                --stroomverbruik totaal hoogtarief
+         local CurrentElectricityQuantityLaag = tonumber(jsonGasPower.dev_26.CurrentElectricityQuantity)                --stroomverbruik totaal laagtarief
+         local CurrentElectricityDeliveredHoog = tonumber(jsonGasPower.dev_25.CurrentElectricityQuantity)               --stroomgeleverd momenteel hoogtarief
+         local CurrentElectricityDeliveredLaag = tonumber(jsonGasPower.dev_27.CurrentElectricityQuantity)               --stroomgeleverd momenteel laagtarief   
+         local CurrentElectricityQuantity =   CurrentElectricityFlowHoog + CurrentElectricityFlowLaag                   --stroomverbruik totaal aktueel
+         local totalDeliveredPower = 0
+         --local totalDeliveredPower2 = CurrentElectricityDeliveredHoog/1000 + CurrentElectricityDeliveredLaag/1000      --stroomverbruik totaal geleverd
          local CurrentGasFlow = tonumber(jsonGasPower.dev_21.CurrentGasFlow)
          local CurrentGasQuantity = tonumber(jsonGasPower.dev_21.CurrentGasQuantity)
-         local CurrentElectricityQuantity =   CurrentElectricityFlowHoog + CurrentElectricityFlowLaag
-         local CurrentElectricityDeliveredLaag = 0
-         local CurrentElectricityDeliveredHoog = 0
-         local totalDeliveredPower = 0
+         
         domoticz.devices(P1SmartMeterPower).updateP1(CurrentElectricityQuantityLaag, CurrentElectricityQuantityHoog, CurrentElectricityDeliveredLaag, CurrentElectricityDeliveredHoog, CurrentElectricityQuantity, totalDeliveredPower).silent()
-        
+        --domoticz.devices(P1SmartMeterPower).updateP1(CurrentElectricityQuantityLaag, CurrentElectricityQuantityHoog, CurrentElectricityQuantity).silent()
         domoticz.devices(P1SmartMeterGas1).updateGas(CurrentGasQuantity).silent()
+        --right--domoticz.log('*** P1 from toon: ' .. CurrentElectricityQuantityLaag/1000 .. 'kwh USAGE1 | ' ..CurrentElectricityQuantityHoog/1000 .. 'kwh USAGE2 | ' .. CurrentElectricityDeliveredLaag/1000 .. 'kwh RETURN1 | ' .. CurrentElectricityDeliveredHoog/1000 .. 'kwh RETURN2 | ' .. CurrentElectricityQuantity .. 'w consumed | '.. totalDeliveredPower2 .. 'w produced', domoticz.LOG_FORCE)
+        domoticz.log('*** P1 from toon: ' .. CurrentElectricityQuantityLaag/1000 .. 'kwh USAGE1 | ' ..CurrentElectricityQuantityHoog/1000 .. 'kwh USAGE2 | ' .. CurrentElectricityQuantity .. 'w consumed | ' ..CurrentGasFlow .. 'm3 CURRENT USAGE | ' .. CurrentGasQuantity .. 'm3 TOTAL USAGE', domoticz.LOG_FORCE)
+
+
+
 -- Update the Boiler Water In to current value
-         local currentboilerInTemp = tonumber(jsonBoilerInfo.boilerInTemp)
+        local currentboilerInTemp = tonumber(jsonBoilerInfo.boilerInTemp)
+        currentboilerInTemp = tonumber(string.format("%.0f", currentboilerInTemp))  -- afgeronde getallen is voldoende [PdB]
         if domoticz.utils.round(domoticz.devices(ToonBoilerTempIn).temperature,0) ~= domoticz.utils.round(currentboilerInTemp,0) then
-            -- domoticz.log('Updating Boiler Water In to current value: ' ..currentboilerInTemp)
+            domoticz.log('Updating Boiler Water In to current value: ' ..currentboilerInTemp)
             domoticz.devices(ToonBoilerTempIn).updateTemperature(currentboilerInTemp).silent()
         end
-        
+       
 -- Update the Boiler water Out to current value
-     local currentboilerOutTemp = tonumber(jsonBoilerInfo.boilerOutTemp)
+        local currentboilerOutTemp = tonumber(jsonBoilerInfo.boilerOutTemp)
+        currentboilerOutTemp = tonumber(string.format("%.0f", currentboilerOutTemp))  -- afgeronde getallen is voldoende [PdB]
         if domoticz.utils.round(domoticz.devices(ToonBoilerTempOut).temperature,0) ~= domoticz.utils.round(currentboilerOutTemp,0) then
-            -- domoticz.log('Updating Boiler Water Out to current value: ' ..currentboilerOutTemp)
+            domoticz.log('Updating Boiler Water Out to current value: ' ..currentboilerOutTemp)
             domoticz.devices(ToonBoilerTempOut).updateTemperature(currentboilerOutTemp).silent()
         end
-        
+       
 -- Update the Boiler water Pressure to current value
         local currentBoilerPressure = tonumber(jsonBoilerInfo.boilerPressure)
+--      currentBoilerPressure = tonumber(string.format("%.1f", currentBoilerPressure))  -- 1 decimaal is voldoende [PdB]
         if domoticz.utils.round(domoticz.devices(ToonBoilerPressure)._nValue,0) ~= domoticz.utils.round(currentBoilerPressure,0) then
-            -- domoticz.log('Updating Boiler Pressure to current value: ' ..currentBoilerPressure)
+            domoticz.log('Updating Boiler Pressure to current value: ' ..currentBoilerPressure, domoticz.LOG_INFO)
             domoticz.devices(ToonBoilerPressure).updatePressure(currentBoilerPressure).silent()
         end
+       
+-- Update the current temperature setpoint
         local currentSetpoint = tonumber(jsonThermostatInfo.currentSetpoint) / 100
-        local currentTemperature = domoticz.utils.round(tonumber(jsonThermostatInfo.currentTemp) / 100,1)
+        local currentTemperature = tonumber(jsonThermostatInfo.currentTemp) / 100
+              currentTemperature = tonumber(string.format("%.1f", currentTemperature))  -- 1 decimaal is voldoende [PdB]
+             
+-- Update the current auto program
         local currentProgramState = tonumber(jsonThermostatInfo.programState)
-            if currentProgramState == 0 then currentProgramState = 10 -- No
+           if currentProgramState == 0 then currentProgramState = 10 -- No
                 elseif currentProgramState == 1 then currentProgramState = 20 -- Yes
                 elseif currentProgramState == 2 then currentProgramState = 30 -- Temporary       
-            end      
+            end
+           
+-- Update the current scene by state
         local currentActiveState = tonumber(jsonThermostatInfo.activeState)
             if currentActiveState == -1 then currentActiveState = 50 -- Manual
                 elseif currentActiveState == 0 then currentActiveState = 40 -- Comfort
                 elseif currentActiveState == 1 then currentActiveState = 30 -- Home
                 elseif currentActiveState == 2 then currentActiveState = 20 -- Sleep
                 elseif currentActiveState == 3 then currentActiveState = 10 -- Away
-                elseif currentActiveState == 4 then currentActiveState = 60 -- Holiday
-            end
-        
-        -- Update the toon burner selector to current program state
+            end     
+           
+-- Update the current scene by temperature
+      --local currentActiveTemp = tonumber(jsonThermostatInfo.currentSetpoint) / 100
+      --if currentActiveTemp == 20.5 then currentActiveState = 40 -- Comfort
+      --elseif currentActiveTemp == 19.5 then currentActiveState = 30 -- Home
+      --elseif currentActiveTemp == 17 then currentActiveState = 20 -- Sleep
+      --elseif currentActiveTemp == 18.5 then currentActiveState = 10 -- Away
+      --else   currentActiveState = 50 -- Manual
+      --end   
+           
+-- Update the toon burner selector to current program state
         local currentBurnerInfo = tonumber(jsonThermostatInfo.burnerInfo)   
         local CurrentToonBurnerValue = domoticz.devices(ToonBurnerName).level
-  
+ 
         if currentBurnerInfo == 0 then currentBurnerInfo = 0 -- uit
             elseif currentBurnerInfo == 1 then currentBurnerInfo = 10 -- cv aan
             elseif currentBurnerInfo == 2 then currentBurnerInfo = 20 -- warmwater aan
-            elseif currentBurnerInfo == 3 then currentBurnerInfo = 10 -- voorverwarmen volgens setpoint
+            elseif currentBurnerInfo == 3 then currentBurnerInfo = 30 -- voorverwarmen volgend setpoint
         end
-            
-        if CurrentToonBurnerValue ~= currentBurnerInfo then  -- Update toon burner selector if it has changed
-            -- domoticz.log('Updating Toon burner info:')
+       
+-- Update toon burner selector if it has changed           
+        if CurrentToonBurnerValue ~= currentBurnerInfo then 
+            domoticz.log('Updating Toon burner info:')
             domoticz.devices(ToonBurnerName).switchSelector(currentBurnerInfo)
         end
-                    
-        -- Update the modulation level of the burner
+                   
+-- Update the modulation level of the burner
         local currentModulationLevel = tonumber(jsonThermostatInfo.currentModulationLevel)
-        if domoticz.devices(ToonBoilerModulation).percentage + 1 ~= currentModulationLevel + 1 then 
-            -- domoticz.log('Updating the Modulation sensor to new value: ' ..currentModulationLevel)
+        if domoticz.devices(ToonBoilerModulation).percentage + 1 ~= currentModulationLevel + 1 then
+            domoticz.log('Updating the Modulation sensor to new value: ' ..currentModulationLevel)
             domoticz.devices(ToonBoilerModulation).updatePercentage(currentModulationLevel)
         end
-        
-         -- Update the temperature Boiler setpoint to current boiler set point
-        local currentInternalBoilerSetpoint = jsonThermostatInfo.currentInternalBoilerSetpoint+1
-        if domoticz.utils.round(domoticz.devices(ToonBoilerSetpoint).temperature, 1) ~= domoticz.utils.round(currentInternalBoilerSetpoint, 1) then 
-            -- domoticz.log('Updating the Boiler internal temperature setpoint to new value: ' ..currentInternalBoilerSetpoint)
-            domoticz.devices(ToonBoilerSetpoint).updateTemperature(currentInternalBoilerSetpoint)
+       
+-- Update the temperature Boiler setpoint to current boiler set point
+         local currentInternalBoilerSetpoint = jsonThermostatInfo.currentInternalBoilerSetpoint+1
+        if domoticz.utils.round(domoticz.devices(ToonBoilerSetpoint).temperature, 1) ~= domoticz.utils.round(currentInternalBoilerSetpoint, 1) then
+        domoticz.log('Updating the Boiler internal temperature setpoint to new value: ' ..currentInternalBoilerSetpoint)
+        domoticz.devices(ToonBoilerSetpoint).updateTemperature(currentInternalBoilerSetpoint)
         end
-        
-        -- Update the thermostat sensor to current setpoint
+       
+-- Update the thermostat sensor to current setpoint
         if domoticz.devices(ToonThermostat).setPoint*100 ~= currentSetpoint*100 then
-            -- domoticz.log('Updating thermostat sensor to new set point: ' ..currentSetpoint)
+            domoticz.log('Updating thermostat sensor to new set point: ' ..currentSetpoint)
             domoticz.devices(ToonThermostat).updateSetPoint(currentSetpoint).silent()
         end
      
-        -- Update the temperature sensor to current room temperature
-        if domoticz.utils.round(domoticz.devices(ToonTemperature).temperature, 1) ~= domoticz.utils.round(currentTemperature, 1) then 
-            -- domoticz.log('Updating the temperature sensor to new value: ' ..currentTemperature)
+-- Update the temperature sensor to current room temperature
+        if domoticz.utils.round(domoticz.devices(ToonTemperature).temperature, 1) ~= domoticz.utils.round(currentTemperature, 1) then
+            domoticz.log('Updating the temperature sensor to new value: ' ..currentTemperature)
             domoticz.devices(ToonTemperature).updateTemperature(currentTemperature)
         end
-        
-        -- Update the toon scene selector sensor to current program state
+       
+-- Update the toon scene selector sensor to current program state
         if domoticz.devices(ToonScenes).level ~= currentActiveState then  -- Update toon selector if it has changed
-            -- domoticz.log('Updating Toon Scenes selector to: '..currentActiveState)
+            domoticz.log('Updating Toon Scenes selector to: '..currentActiveState)
             domoticz.devices(ToonScenes).switchSelector(currentActiveState).silent()
         end
-        
-        -- Updates the toon auto program switch 
+       
+-- Updates the toon auto program switch
         if domoticz.devices(ToonAutoProgram).level ~= currentProgramState then -- Update toon auto program selector if it has changed
-            -- domoticz.log('Updating Toon Auto Program selector to: '..currentProgramState)
+            domoticz.log('Updating Toon Auto Program selector to: '..currentProgramState)
             domoticz.devices(ToonAutoProgram).switchSelector(currentProgramState).silent()
         end
-        
-        -- Updates the toon program information text box
-        local currentNextTime = jsonThermostatInfo.nextTime
-        local currentNextSetPoint = tonumber(jsonThermostatInfo.nextSetpoint) / 100
-        
-        if currentNextTime == 0 or currentNextSetPoint == 0 then
-            ToonProgramInformationSensorValue = 'Op ' ..currentSetpoint.. '°'
-        else
-            ToonProgramInformationSensorValue = 'Om ' ..os.date('%H:%M', currentNextTime).. ' op ' ..currentNextSetPoint.. '°'
-        end
-        
-        if domoticz.devices(ToonProgramInformation).text ~= ToonProgramInformationSensorValue then
-            -- domoticz.log('Updating Toon Program Information to: '..ToonProgramInformationSensorValue)
-            domoticz.devices(ToonProgramInformation).updateText(ToonProgramInformationSensorValue)
-        end
+       
+-- Updates the toon program information text box
+--      local currentNextTime = jsonThermostatInfo.nextTime
+--      local currentNextSetPoint = tonumber(jsonThermostatInfo.nextSetpoint) / 100
+       
+--      if currentNextTime == 0 or currentNextSetPoint == 0 then
+--          ToonProgramInformationSensorValue = 'Op ' ..currentSetpoint.. '°'
+--      else
+--          ToonProgramInformationSensorValue = 'Om ' ..os.date('%H:%M', currentNextTime).. ' op ' ..currentNextSetPoint.. '°'
+--      end
+       
+--      if domoticz.devices(ToonProgramInformation).text ~= ToonProgramInformationSensorValue then
+--          domoticz.log('Updating Toon Program Information to: '..ToonProgramInformationSensorValue)
+--          domoticz.devices(ToonProgramInformation).updateText(ToonProgramInformationSensorValue)
+--      end
    end
 }
