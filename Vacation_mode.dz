@@ -3,6 +3,7 @@
 --Date: 18-07-2019
 --Last update: 18-07-2019
 --Changelog:
+--16-02-2020: Added a option for when there are babysitters
 --Source: -
 --Description: Set's 'Vakantie' to true, when nobody's home for more than 24 hours
 --*------------------------------------------------------------------------------------*--
@@ -15,14 +16,15 @@ return {
 	},
 	execute = function(domoticz, device)
 		 --Declarations
-		local IemandThuis = domoticz.devices(78) -- Iemand Thuis
-		local Vakantie = domoticz.devices(107) -- Vakantie
+		local IemandThuis   = domoticz.devices(78)  -- Iemand Thuis
+		local Vakantie      = domoticz.devices(107) -- Vakantie
+		local Oppas         = domoticz.devices(299) -- Babysit
 		
         	--Function
-        	if (not IemandThuis.active) then -- When nobody is home
-            		Vakantie.switchOn().afterHour(24) -- Switch vakantie on after 24 hours
+        	if (not IemandThuis.active) then                            -- When nobody is home
+            		Vakantie.switchOn().afterHour(24)                   -- Switch vakantie on after 24 hours
             		domoticz.log('De vakantiemodus is ingeschakeld')
-        	elseif (IemandThuis.active) then -- if somebody is home in 24 hours, cancel the command and turn off vakantie
+        	elseif (IemandThuis.active) or (Oppas.active) then             -- if somebody is home in 24 hours or there are babysitters, cancel the command and turn off vakantie
             		Vakantie.cancelQueuedCommands()
             		Vakantie.switchOff().checkFirst()
             		domoticz.log('De vakantiemodus is uitgeschakeld')
