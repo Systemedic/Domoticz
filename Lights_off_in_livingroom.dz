@@ -2,7 +2,9 @@
 --Creator: Rob
 --Date: 03-12-2019
 --Last update: 18-12-2019
---Changelog: Combined two scripts to turn off lights. Before and after 22.00
+--Changelog:
+--18-12-2019 | Combined two scripts to turn off lights. Before and after 22.00. 
+--16-02-2020 | Added option to turn off lights when nobody home
 --Source: -
 --Description: Used to Switch off lights in the living room when time is before 22.00 hour.
 --*------------------------------------------------------------------------------------*--
@@ -22,23 +24,24 @@ return {
    
     execute = function(domoticz, device)
         --Declarations
-        local Time          = require('Time')       --Time function
-        local CurrentTime   = Time()                --Current time
-        local Knop          = domoticz.devices(92)  -- Xiaomi Mini Switch
+        local Time          = require('Time')           --Time function
+        local CurrentTime   = Time()                    --Current time
+        local Knop          = domoticz.devices(92)      -- Xiaomi Mini Switch
+        local IemandThuis 	= domoticz.devices(78)      -- Iemand Thuis
         
         --Function
         if Knop.state == 'Double Click' and (CurrentTime.matchesRule('at 06:00-22:00')) then
-            domoticz.devices(188).switchOff().checkFirst()   --Lampen boven eettafel
-            domoticz.devices(185).switchOff().checkFirst()   --Lampen boven bank
-            domoticz.devices(51).switchOff().checkFirst()    --Lamp naast televisie
-            domoticz.devices(179).switchOff().checkFirst()   --Lamp boven dressoir
+            domoticz.devices(188).switchOff()   --Lampen boven eettafel
+            domoticz.devices(185).switchOff()   --Lampen boven bank
+            domoticz.devices(51).switchOff()    --Lamp naast televisie
+            domoticz.devices(179).switchOff()   --Lamp boven dressoir
             domoticz.log('De lampen zijn uitgeschakeld')
             
-        elseif Knop.state == 'Double Click' then 
-            domoticz.devices(188).switchOff().checkFirst()                --Lampen boven eettafel
-            domoticz.devices(185).switchOff().afterSec(10).checkFirst()   --Lampen boven bank
-            domoticz.devices(51).switchOff().afterSec(15).checkFirst()    --Lamp naast televisie
-            domoticz.devices(179).switchOff().afterSec(20).checkFirst()   --Lamp boven dressoir
+        elseif (Knop.state == 'Double Click') or (not IemandThuis.active) then 
+            domoticz.devices(188).switchOff()                --Lampen boven eettafel
+            domoticz.devices(185).switchOff().afterSec(10)   --Lampen boven bank
+            domoticz.devices(51).switchOff().afterSec(15)    --Lamp naast televisie
+            domoticz.devices(179).switchOff().afterSec(20)   --Lamp boven dressoir
             domoticz.log('De lampen zijn uitgeschakeld')
        end
 end
