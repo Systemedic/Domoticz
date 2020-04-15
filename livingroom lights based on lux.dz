@@ -1,0 +1,69 @@
+--*------------------------------------------------------------------------------------*--
+--Creator: Rob
+--Date: 01-04-2020
+--Last update: 10-04-2020
+--Changelog:
+--10-04-2020: Added option so lights will not switch off when event lights at night are on.
+--Source: -
+--Description: Used to switch the lights in the living room, based on someone home and lux
+--*------------------------------------------------------------------------------------*--
+
+return {
+	on = {
+		devices = {
+			311,                                                                        --PIR Livingroom | Lux
+            312,                                                                        --PIR Livingroom | Movement
+            313                                                                         --Mode                                                                             
+		}
+	},
+	
+    --Add logging for this script  
+   logging = {
+   level = domoticz.LOG_INFO,                                                           --Set the loglevel. Seclect from:LOG_INFO, LOG_DEBUG, LOG_ERROR or LOG_FORCE to override system log level
+   marker = "-=#Livingroom Lights | Lux#=-"
+   },
+	
+	execute = function(domoticz, device)
+	--Declarations
+	local Modus             = domoticz.devices(313)                                     --Mode
+	local LuxDevice         = domoticz.devices(311)                                     --PIR Livingroom | Lux
+    local Lux               = LuxDevice.lux
+    local Movement          = domoticz.devices(312)                                     --PIR Livingroom | Movement
+	
+	--Function
+	--Light above dresser
+	if (Modus.state == 'Iemand thuis/Oppas' and Lux < 75) then                          --Someone home and lux below set value then,
+	domoticz.devices(179).switchOn().checkFirst()                                        --turn on light above dresser at 100% after 5 minutes
+	else                                                                                --If not,
+    domoticz.devices(179).switchOff().checkFirst()                                      --Turn off light above dresser
+    end
+        
+    --Other lights in the livingroom
+    if (Modus.state == 'Iemand thuis/Oppas' and Lux < 14) then
+    domoticz.devices(188).dimTo(70)                                                     --Turn on lights above the dinnertable at 70%
+    domoticz.devices(185).dimTo(35)                                                     --Turn on lights above the couch at 35%
+    domoticz.devices(51).switchOn().checkFirst()                                        --Turn on light next to the television
+    domoticz.devices(290).switchOn().checkFirst()                                       --Turn on ledstrip in the kitchen at 75%
+
+    elseif (Modus.state == 'Iemand thuis/Oppas' and Lux > 15) then
+    domoticz.devices(185).switchOff().checkFirst()                                      --Turn off lights above the couch
+    domoticz.devices(51).switchOff().checkFirst()                                       --Turn off light next to the television
+    
+    --update 12-04-2020
+    elseif (Modus.state == 'Alles uit' and Modus.lastUpdate.minutesAgo > 3              --If mode is set to 'Alles uit' and mode hasn't changed the last 3 minutes and
+    and Movement.active and Lux < 10) then                                              --there is movement and lux is below set level then,
+    domoticz.devices(188).dimTo(15).forSec(150)                                         --Turn on lights above the dinnertable at 15%
+    domoticz.devices(185).dimTo(15).forSec(150)                                         --Turn on lights above the couch at 15%
+    --domoticz.devices(188).switchOff().afterSec(1)                                     --Turn off lights above the dinnertable after 2.5 minutes
+    --domoticz.devices(185).switchOff().afterSec(1)                                     --Turn off lights above the couch after 2.5 minutes
+    --end update 12-04-2020
+    
+    elseif Modus.state == 'Uit' then
+    domoticz.devices(188).switchOff().checkFirst()                                      --Turn off lights above the dinnertable
+    domoticz.devices(179).switchOff().checkFirst()                                      --Turn off light above the dresser
+    domoticz.devices(185).switchOff().checkFirst()                                      --Turn off lights above the couch
+    domoticz.devices(51).switchOff().checkFirst()                                       --Turn off lights next to the television
+    domoticz.devices(290).switchOff().checkFirst()                                      --Turn off ledstrip in the kitchen
+    end
+end
+}
