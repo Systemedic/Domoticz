@@ -1,32 +1,31 @@
 --*------------------------------------------------------------------------------------*--
 --Creator: Rob
 --Date: 26-12-2019
---Last update: 
+--Last update: 03-04-2020 
 --Changelog:
+--03-04-2020: Cleaned up the script
 --Source: -
---Description: Used to Switch on Lamp, when there is movement in the hall
+--Description: Used to Switch on the light in the hall when there is movement and lux is below set value
 --*------------------------------------------------------------------------------------*--
 
 return {
 	on = {
 		devices = {
-			289  -- Bewegingssensor Hal
+			289                                                                         --PIR hall | Movement
 		}
 	},
 	execute = function(domoticz, device)
 		--Declarations
-		local Light 	= domoticz.devices(287) --Lamp Hall
-		local HBS 	    = domoticz.devices(289) --Bewegingssensor Hal
-	    local LuxDevice = domoticz.devices(288) --Bewegingssensor Hal Lux
+		local Light 	= domoticz.devices(287)                                         --Light in hall
+		local Pir 	    = domoticz.devices(289)                                         --PIR hall | Movement
+	    local LuxDevice = domoticz.devices(288)                                         --PIR hall | Lux
         local Lux = LuxDevice.lux
 		
 		--Function
-		if (HBS.active) and Lux < 10 then -- sensor on
-		    Light.cancelQueuedCommands()
-		    Light.dimTo(65)-- Turn on 65%
-		    Light.switchOff().afterMin(2)
+		if (Pir.active) and Lux < 9 then                                                --When there is movement and lux is below set value then,
+		    Light.cancelQueuedCommands()                                                --Cancel previous commands
+		    Light.dimTo(65)                                                             --Turn on light at 65%
+		    Light.switchOff().afterSec(80)                                              --Switch off light after 80 seconds
 		end
 	end
 }
-
-
