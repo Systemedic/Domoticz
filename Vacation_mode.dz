@@ -1,9 +1,10 @@
 --*------------------------------------------------------------------------------------*--
---Creator: Rens
+--Creator: Rob
 --Date: 18-07-2019
---Last update: 18-07-2019
+--Last update: 03-04-2020
 --Changelog:
 --16-02-2020: Added a option for when there are babysitters
+--03-04-2020: Implemented the mode option. Cleaned up the script
 --Source: -
 --Description: Set's 'Vakantie' to true, when nobody's home for more than 24 hours
 --*------------------------------------------------------------------------------------*--
@@ -11,23 +12,24 @@
 return {
 	on = {
 		devices = {
-			78 -- IemandThuis
+			78,                                                                             --Someone home
+			313                                                                             --Mode
 		}
 	},
 	execute = function(domoticz, device)
 		 --Declarations
-		local IemandThuis   = domoticz.devices(78)  -- Iemand Thuis
-		local Vakantie      = domoticz.devices(107) -- Vakantie
-		local Oppas         = domoticz.devices(299) -- Babysit
+		local IemandThuis   = domoticz.devices(78)                                          --Someone home
+		local Vakantie      = domoticz.devices(107)                                         --Holiday switch
+		local Modus         = domoticz.devices(313)                                         --Mode
 		
         	--Function
-        	if (not IemandThuis.active) then                            -- When nobody is home
-            		Vakantie.switchOn().afterHour(24)                   -- Switch vakantie on after 24 hours
-            		domoticz.log('De vakantiemodus is ingeschakeld')
-        	elseif (IemandThuis.active) or (Oppas.active) then             -- if somebody is home in 24 hours or there are babysitters, cancel the command and turn off vakantie
-            		Vakantie.cancelQueuedCommands()
-            		Vakantie.switchOff().checkFirst()
-            		domoticz.log('De vakantiemodus is uitgeschakeld')
+        	if (not IemandThuis.active) then                                                --When nobody is home
+            		Vakantie.switchOn().afterHour(24)                                       --Switch vakantie on after 24 hours
+            		domoticz.log('De vakantiemodus is ingeschakeld')                        --Write te log
+        	elseif Modus.state == 'Iemand thuis/Oppas' then                                 --If mode changed to 'Iemand thuis/Oppas cancel the command and turn off vakantie mode
+            		Vakantie.cancelQueuedCommands()                                         --Cancel previous commands
+            		Vakantie.switchOff().checkFirst()                                       --Switch off vakantie mode
+            		domoticz.log('De vakantiemodus is uitgeschakeld')                       --Write to log
         	end
 	end
 }
