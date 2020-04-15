@@ -1,8 +1,9 @@
 --*------------------------------------------------------------------------------------*--
 --Creator: Rob
 --Date: 13-09-2019
---Last update: xx-xx-xxxx
+--Last update: 03-04-2020
 --Changelog:
+--03-04-2020: Cleaned up the script
 --Source: -
 --Description: Used to Switch on light at the front door when time is sunset
 --*------------------------------------------------------------------------------------*--
@@ -10,22 +11,28 @@
 return {
     on = {
         timer = {
-	        'at sunset',
-	        'at sunrise'
+	        'at sunset',                                                                --Timer when the script will do something
+	        'at sunrise'                                                                --Timer when the script will do something
         }
     },
+
+	--Add logging for this script  
+   logging = {
+   level = domoticz.LOG_INFO,                                                           --Set the loglevel. Seclect from:LOG_INFO, LOG_DEBUG, LOG_ERROR or LOG_FORCE to override system log level
+   marker = "-=#Front light#=-"
+   },
     
     execute = function(domoticz, timer)
         --Declarations
-		local Light 	= domoticz.devices(189) --Buitenlamp voor
+		local Light 	= domoticz.devices(189)                                         --Light at the front door
 		
 		--Function
-            if (timer.trigger == 'at sunset') then
-	        Light.switchOn()
-	        domoticz.log('Buitenlamp aangezet via LUA!')
+            if (timer.trigger == 'at sunset') then                                      --When timer is sunset,
+	        Light.switchOn()                                                            --Turn on the light
+	        domoticz.log('Buitenlamp aangezet via LUA!')                                --Write in the log 
         else
-	        Light.switchOff()
-	        domoticz.log('Buitenlamp uitgezet via LUA!')
+	        Light.switchOff()                                                           --When timer is sunrise, switch off the light
+	        domoticz.log('Buitenlamp uitgezet via LUA!')                                --Write in the log
         end
     end
 }
